@@ -1,6 +1,6 @@
 package com.av.editor
 
-class AVEditor(inUrl: String, outUrl: String) {
+class AVEditor {
 
     companion object {
         init {
@@ -8,9 +8,9 @@ class AVEditor(inUrl: String, outUrl: String) {
         }
     }
 
-    init {
-        native_ave_run(inUrl, outUrl)
+    fun repack(inUrl: String, outUrl: String) {
+        native_ave_repack(inUrl, outUrl)
     }
 
-    private external fun native_ave_run(inUrl: String, outUrl: String)
+    private external fun native_ave_repack(inUrl: String, outUrl: String)
 }

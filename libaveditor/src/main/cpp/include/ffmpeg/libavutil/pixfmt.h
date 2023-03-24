@@ -545,7 +545,7 @@ enum AVColorSpace {
  *   - For chrominance planes such as Cb,Cr and Ct,Cp, 'E' is the original
  *     value in range of -0.5 to 0.5.
  *   - 'n' is the output bit depth.
- *   - For additional definitions such as rounding and clipping to valid n
+ *   - For additional definitions such as rounding and repack to valid n
  *     bit unsigned integer range, please refer to BT.2100 (Table 9).
  */
 enum AVColorRange {
