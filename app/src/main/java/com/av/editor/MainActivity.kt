@@ -14,26 +14,22 @@ class MainActivity : AppCompatActivity() {
                 android.Manifest.permission.WRITE_EXTERNAL_STORAGE
             ), 100
         )
+        goRecode()
+    }
+
+    private fun goRecode() {
+        Thread {
+            val inUrlMp4 = AssetUtils.asset2cache(this, "movie.mp4")
+            val outUrlMp42Flv = File(File(inUrlMp4).parentFile, "movieo.mp4").absolutePath
+            AVEditor().recode(inUrlMp4, outUrlMp42Flv)
+        }.start()
     }
 
     private fun goRepack() {
-        //flv
-        val inUrlFlv = AssetUtils.asset2cache(this, "play.flv")
-        val outUrlFlv2Mp4 = File(File(inUrlFlv).parentFile, "play.mp4").absolutePath
-        val outUrlFlv2Ts = File(File(inUrlFlv).parentFile, "play.ts").absolutePath
-        AVEditor().repack(inUrlFlv, outUrlFlv2Mp4)
-        AVEditor().repack(inUrlFlv, outUrlFlv2Ts)
-        /*//mp4
-        val inUrlMp4 = AssetUtils.asset2cache(this, "movie.mp4")
-        val outUrlMp42Flv = File(File(inUrlFlv).parentFile, "movie_out.flv").absolutePath
-        val outUrlMp42Ts = File(File(inUrlFlv).parentFile, "movie_out.ts").absolutePath
-        AVEditor().repack(inUrlMp4, outUrlMp42Flv)
-        AVEditor().repack(inUrlMp4, outUrlMp42Ts)
-        //ts
-        val inUrlTs = AssetUtils.asset2cache(this, "ts.ts")
-        val outUrlTs2Flv = File(File(inUrlFlv).parentFile, "ts_out.flv").absolutePath
-        val outUrlTs2Mp4 = File(File(inUrlFlv).parentFile, "ts_out.mp4").absolutePath
-        AVEditor().repack(inUrlTs, outUrlTs2Flv)
-        AVEditor().repack(inUrlTs, outUrlTs2Mp4)*/
+        Thread {
+            val inUrlMp4 = AssetUtils.asset2cache(this, "movie.mp4")
+            val outUrlMp42Flv = File(File(inUrlMp4).parentFile, "movie_o.flv").absolutePath
+            AVEditor().repack(inUrlMp4, outUrlMp42Flv)
+        }.start()
     }
 }
