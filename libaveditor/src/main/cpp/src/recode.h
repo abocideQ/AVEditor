@@ -8,16 +8,18 @@
 #include "common.h"
 
 typedef struct av_config {
+    AVCodecID AVVideoCodecID = AV_CODEC_ID_NONE;
     int v_width = 0;
     int v_height = 0;
     int v_gop_size = 0;
     int v_bit_rate = 0;
     int v_fps = 0;
+    AVCodecID AVAudioCodecID = AV_CODEC_ID_NONE;
     int a_sample_rate = 0;
     int a_bit_rate = 0;
     int a_ch_layout = 0;
-    long long time_start;
-    long long time_end;
+    long long time_start = 0;
+    long long time_end = 0;
 } AVConfig;
 
 typedef struct av_stream_model {
@@ -43,6 +45,7 @@ private:
     AVFormatContext *m_out_avformat_ctx;
     int m_av_stream_models_size;
     AVStreamModel **m_av_stream_models;
+
     void recode_free();
 };
 
