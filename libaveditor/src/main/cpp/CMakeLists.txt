@@ -30,6 +30,7 @@ set(SRC_HEADER
         )
 set(SRC_CPPLUS
         ${CMAKE_SOURCE_DIR}/editor_jni.cpp
+        ${CMAKE_SOURCE_DIR}/src/timeline.cpp
         ${CMAKE_SOURCE_DIR}/src/repack.cpp
         ${CMAKE_SOURCE_DIR}/src/recode.cpp
         )

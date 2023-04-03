@@ -13,7 +13,7 @@ typedef struct av_config {
     int v_height = 0;
     int v_gop_size = 0;
     int v_bit_rate = 0;
-    int v_fps = 0;
+    /*int v_fps = 0;*/
     AVCodecID AVAudioCodecID = AV_CODEC_ID_NONE;
     int a_sample_rate = 0;
     int a_bit_rate = 0;

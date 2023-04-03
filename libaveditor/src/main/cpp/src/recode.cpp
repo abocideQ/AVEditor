@@ -6,8 +6,7 @@
 int recode::recode_codec(const std::string &in_url,
                          const std::string &out_url,
                          const AVConfig &out_config) {
-    int err = -1;
-    int line;
+    int line, err = -1;
     {//open avformat
         //in
         m_in_avformat_ctx = avformat_alloc_context();
@@ -69,6 +68,7 @@ int recode::recode_codec(const std::string &in_url,
                 line = __LINE__;
                 goto __ERR;
             }
+            model->in_av_decode_ctx->framerate = in_stream->avg_frame_rate;
             model->codec_type = in_stream->codecpar->codec_type;
             model->stream_index = (int) i;
             m_av_stream_models[i] = model;
@@ -76,7 +76,6 @@ int recode::recode_codec(const std::string &in_url,
         //out
         for (size_t i = 0; i < m_av_stream_models_size; i++) {
             AVStreamModel *model = m_av_stream_models[i];
-            AVStream *in_stream = m_in_avformat_ctx->streams[model->stream_index];
             AVCodec *out_av_encoder = avcodec_find_encoder(
                     model->codec_type == AVMEDIA_TYPE_VIDEO ?
                     (out_config.AVVideoCodecID == AV_CODEC_ID_NONE ?
@@ -100,31 +99,26 @@ int recode::recode_codec(const std::string &in_url,
                 out_av_encoder_ctx->codec_type = AVMEDIA_TYPE_VIDEO;
                 out_av_encoder_ctx->codec_id = out_av_encoder->id;
                 out_av_encoder_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
-                /*out_av_encoder_ctx->width = in_stream->codecpar->width;
-                out_av_encoder_ctx->height = in_stream->codecpar->height;
+                /*out_av_encoder_ctx->width = model->in_av_decode_ctx->width;
+                out_av_encoder_ctx->height = model->in_av_decode_ctx->height;
                 out_av_encoder_ctx->gop_size = 12;
                 out_av_encoder_ctx->time_base = AVRational{1, 25};
                 out_av_encoder_ctx->bit_rate = 4000 * 8;*/
                 out_av_encoder_ctx->width = out_config.v_width == 0 ?
-                                            in_stream->codecpar->width :
+                                            model->in_av_decode_ctx->width :
                                             out_config.v_width;
                 out_av_encoder_ctx->height = out_config.v_height == 0 ?
-                                             in_stream->codecpar->height :
+                                             model->in_av_decode_ctx->height :
                                              out_config.v_height;
                 out_av_encoder_ctx->gop_size = out_config.v_gop_size == 0 ?
                                                model->in_av_decode_ctx->gop_size :
                                                out_config.v_gop_size;
-                out_av_encoder_ctx->framerate = model->in_av_decode_ctx->framerate;
-                if (av_q2d(out_av_encoder_ctx->framerate) == 0) {
-                    out_av_encoder_ctx->framerate = AVRational{25, 1};
-                }
-                out_av_encoder_ctx->time_base = out_config.v_fps == 0 ?
-                                                (av_q2d(out_av_encoder_ctx->time_base) == 0 ?
-                                                 AVRational{1, out_av_encoder_ctx->framerate.num} :
-                                                 model->in_av_decode_ctx->time_base) :
-                                                AVRational{1, out_config.v_fps};
+                out_av_encoder_ctx->time_base = av_q2d(model->in_av_decode_ctx->time_base) == 0 ?
+                                                AVRational{1, (int) av_q2d(
+                                                        model->in_av_decode_ctx->framerate)} :
+                                                AVRational{1, 24};
                 out_av_encoder_ctx->bit_rate = out_config.v_bit_rate == 0 ?
-                                               4000 * 8 :
+                                               model->in_av_decode_ctx->bit_rate :
                                                out_config.v_bit_rate;
             } else if (model->codec_type == AVMEDIA_TYPE_AUDIO) {
                 out_av_encoder_ctx->codec_type = AVMEDIA_TYPE_AUDIO;
@@ -132,30 +126,48 @@ int recode::recode_codec(const std::string &in_url,
                 out_av_encoder_ctx->sample_fmt = out_av_encoder->sample_fmts ?
                                                  out_av_encoder->sample_fmts[0] :
                                                  AV_SAMPLE_FMT_FLTP;
+                int sample_rate = out_config.a_sample_rate == 0 ?
+                                  model->in_av_decode_ctx->sample_rate :
+                                  out_config.a_sample_rate;
+                if (out_av_encoder_ctx->codec->supported_samplerates) {
+                    out_av_encoder_ctx->sample_rate = out_av_encoder_ctx->codec->supported_samplerates[0];
+                    for (i = 0; out_av_encoder_ctx->codec->supported_samplerates[i]; i++) {
+                        if (out_av_encoder_ctx->codec->supported_samplerates[i] == sample_rate) {
+                            out_av_encoder_ctx->sample_rate = sample_rate;
+                            break;
+                        }
+                    }
+                }
                 /*out_av_encoder_ctx->channel_layout = AV_CH_LAYOUT_STEREO;
                 out_av_encoder_ctx->channels = 2;
-                out_av_encoder_ctx->sample_rate = 44100;
                 out_av_encoder_ctx->time_base = (AVRational) {1, 44100};
                 out_av_encoder_ctx->bit_rate = 96000;*/
-                out_av_encoder_ctx->channel_layout = out_config.a_ch_layout == 0 ?
-                                                     model->in_av_decode_ctx->channel_layout :
-                                                     out_config.a_ch_layout;
+                uint64_t channel_layout = out_config.a_ch_layout == 0 ?
+                                          model->in_av_decode_ctx->channel_layout :
+                                          out_config.a_ch_layout;
+                out_av_encoder_ctx->channel_layout = channel_layout;
+                if (out_av_encoder_ctx->codec->channel_layouts) {
+                    out_av_encoder_ctx->channel_layout = out_av_encoder_ctx->codec->channel_layouts[0];
+                    for (i = 0; out_av_encoder_ctx->codec->channel_layouts[i]; i++) {
+                        if (out_av_encoder_ctx->codec->channel_layouts[i] == channel_layout) {
+                            out_av_encoder_ctx->channel_layout = channel_layout;
+                            break;
+                        }
+                    }
+                }
                 out_av_encoder_ctx->channels = out_config.a_ch_layout == 0 ?
                                                model->in_av_decode_ctx->channels :
                                                av_get_channel_layout_nb_channels(
                                                        out_config.a_ch_layout);
-                out_av_encoder_ctx->sample_rate = out_config.a_sample_rate == 0 ?
-                                                  model->in_av_decode_ctx->sample_rate :
-                                                  out_config.a_sample_rate;
                 out_av_encoder_ctx->time_base = (AVRational) {1, out_av_encoder_ctx->sample_rate};
                 out_av_encoder_ctx->bit_rate = out_config.a_bit_rate == 0 ?
-                                               96000 :
+                                               model->in_av_decode_ctx->bit_rate :
                                                out_config.a_bit_rate;
             }
-            /*if (m_out_avformat_ctx->flags & AVFMT_GLOBALHEADER) {
+            if (m_out_avformat_ctx->flags & AVFMT_GLOBALHEADER) {
                 //Some formats want stream headers to be separate
                 out_av_encoder_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-            }*/
+            }
             if ((err = avcodec_open2(out_av_encoder_ctx, out_av_encoder, nullptr)) < 0) {
                 line = __LINE__;
                 goto __ERR;
@@ -193,6 +205,10 @@ int recode::recode_codec(const std::string &in_url,
             goto __ERR;
         }
         while (av_read_frame(m_in_avformat_ctx, m_packet) >= 0) {
+            if ((out_config.time_start > 0 && out_config.time_start > m_packet->dts) ||
+                (out_config.time_end > 0 && out_config.time_end < m_packet->dts)) {
+                continue;
+            }
             AVStreamModel *model = m_av_stream_models[m_packet->stream_index];
             if (model == nullptr) {
                 continue;
