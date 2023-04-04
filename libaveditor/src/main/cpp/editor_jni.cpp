@@ -44,8 +44,6 @@ void native_ave_filter(JNIEnv *env, jobject *, jstring inUrl, jstring outUrl, js
     std::string filterDesc_str = std::string((char *) env->GetStringUTFChars(filterDesc, &jCopy));
     {
         LOGE("_______________start filter_______________");
-        auto *p_filter = new filtering();
-        delete p_filter;
         LOGE("_______________end filter_______________");
     }
 }
