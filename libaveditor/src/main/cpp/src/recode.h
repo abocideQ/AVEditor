@@ -18,14 +18,15 @@ typedef struct av_config {
     int a_sample_rate = 0;
     int a_bit_rate = 0;
     int a_ch_layout = 0;
-    long long time_start = 0;
-    long long time_end = 0;
+    long long dts_left = 0;
+    long long dts_right = 0;
 } AVConfig;
 
 typedef struct av_stream_model {
     int stream_index;
     AVMediaType codec_type;
     AVCodecContext *in_av_decode_ctx;
+    AVRational in_time_base;
     SwsContext *in_sws_ctx;
     SwrContext *in_swr_ctx;
     AVCodecContext *out_av_decode_ctx;

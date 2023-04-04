@@ -71,6 +71,7 @@ int recode::recode_codec(const std::string &in_url,
             model->in_av_decode_ctx->framerate = in_stream->avg_frame_rate;
             model->codec_type = in_stream->codecpar->codec_type;
             model->stream_index = (int) i;
+            model->in_time_base = in_stream->time_base;
             m_av_stream_models[i] = model;
         }
         //out
@@ -205,13 +206,18 @@ int recode::recode_codec(const std::string &in_url,
             goto __ERR;
         }
         while (av_read_frame(m_in_avformat_ctx, m_packet) >= 0) {
-            if ((out_config.time_start > 0 && out_config.time_start > m_packet->dts) ||
-                (out_config.time_end > 0 && out_config.time_end < m_packet->dts)) {
-                continue;
-            }
             AVStreamModel *model = m_av_stream_models[m_packet->stream_index];
             if (model == nullptr) {
                 continue;
+            }
+            if (out_config.dts_left > 0 || out_config.dts_right > 0) {
+                long double time_base = av_q2d(model->in_time_base);
+                long double dts_left = (long double) out_config.dts_left * time_base;
+                long double dts_right = (long double) out_config.dts_right * time_base;
+                long double dts = (long double) m_packet->dts * time_base;
+                if (dts < dts_left || dts > dts_right) {
+                    continue;
+                }
             }
             if ((err = avcodec_send_packet(model->in_av_decode_ctx, m_packet)) < 0) {
                 line = __LINE__;
