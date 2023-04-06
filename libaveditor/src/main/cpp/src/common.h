@@ -19,6 +19,8 @@ extern "C" {
 #include "include/ffmpeg/libswscale/swscale.h"
 #include "include/ffmpeg/libswresample/swresample.h"
 #include "include/ffmpeg/libavfilter/avfilter.h"
+#include "include/ffmpeg/libavfilter/buffersink.h"
+#include "include/ffmpeg/libavfilter/buffersrc.h"
 #include "include/ffmpeg/libavutil/imgutils.h"
 #include "include/ffmpeg/libavutil/timestamp.h"
 #include "include/ffmpeg/libavutil/channel_layout.h"

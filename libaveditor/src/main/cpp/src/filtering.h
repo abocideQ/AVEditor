@@ -15,18 +15,23 @@ typedef struct av_filter_model {
     AVCodecContext *in_av_decode_ctx;
     AVRational in_time_base;
 
+    std::string av_filter_desc;
     AVFilterGraph *av_filter_graph;
     AVFilterContext *av_filter_buffer_src_ctx;
     AVFilterContext *av_filter_buffer_sink_ctx;
     AVFilterInOut *av_filter_in;
     AVFilterInOut *av_filter_out;
 
+    int64_t next_pts;
     AVCodecContext *out_av_decode_ctx;
 } AVFilterModel;
 
 class filtering {
 public:
-    int go_filter(const std::string &, const std::string &, const std::string &);
+    int go_filter(const std::string &,
+                  const std::string &,
+                  const std::string &,
+                  const std::string &);
 
     void go_filter_free();
 

@@ -37,14 +37,23 @@ void native_ave_recode(JNIEnv *env, jobject *, jstring inUrl, jstring outUrl) {
     }
 }
 
-void native_ave_filter(JNIEnv *env, jobject *, jstring inUrl, jstring outUrl, jstring filterDesc) {
+void
+native_ave_filter(JNIEnv *env, jobject *,
+                  jstring inUrl,
+                  jstring outUrl,
+                  jstring filterVideo,
+                  jstring filterAudio) {
     jboolean jCopy = false;
     std::string inUrl_str = std::string((char *) env->GetStringUTFChars(inUrl, &jCopy));
     std::string outUrl_str = std::string((char *) env->GetStringUTFChars(outUrl, &jCopy));
-    std::string filterDesc_str = std::string((char *) env->GetStringUTFChars(filterDesc, &jCopy));
+    std::string filterVideo_str = std::string((char *) env->GetStringUTFChars(filterVideo, &jCopy));
+    std::string filterAudio_str = std::string((char *) env->GetStringUTFChars(filterVideo, &jCopy));
     {
         LOGE("_______________start filter_______________");
-        LOGE("_______________end filter_______________");
+        auto *p_filtering = new filtering();
+        int err = p_filtering->go_filter(inUrl_str, outUrl_str, filterVideo_str, filterAudio_str);
+        delete p_filtering;
+        LOGE("_______________end filter_______________%d", err);
     }
 }
 
@@ -70,7 +79,7 @@ JNINativeMethod JNI_METHODS_AVEditor[] = {
         },
         {
                 "native_ave_filter",
-                "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+                "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
                 (void *) native_ave_filter
         },
 };

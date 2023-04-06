@@ -55,7 +55,7 @@ class MainActivity : AppCompatActivity() {
         Thread {
             val inUrl = AssetUtils.asset2cache(this, "movie.mp4")
             val outUrl = File(File(inUrl).parentFile, "movie_filter.mp4").absolutePath
-            AVEditor().filter(inUrl, outUrl, "movie=logo.png;[in]overlay=5:5[out]")
+            AVEditor().filter(inUrl, outUrl, "scale=iw*2:ih*2", "")
         }.start()
     }
 }
