@@ -13,7 +13,6 @@ typedef struct av_filter_model {
     int stream_index;
     AVMediaType codec_type;
     AVCodecContext *in_av_decode_ctx;
-    AVRational in_time_base;
 
     std::string av_filter_desc;
     AVFilterGraph *av_filter_graph;
@@ -22,12 +21,18 @@ typedef struct av_filter_model {
     AVFilterInOut *av_filter_in;
     AVFilterInOut *av_filter_out;
 
-    int64_t next_pts;
     AVCodecContext *out_av_decode_ctx;
 } AVFilterModel;
 
 class filtering {
 public:
+    /** filter_desc:
+     *  scale 缩放
+     *  overlay 叠加
+     *  crop 裁剪
+     *  trim 截取
+     *  rotate  旋转
+     */
     int go_filter(const std::string &,
                   const std::string &,
                   const std::string &,

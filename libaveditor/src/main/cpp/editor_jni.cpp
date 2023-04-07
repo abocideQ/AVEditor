@@ -47,7 +47,7 @@ native_ave_filter(JNIEnv *env, jobject *,
     std::string inUrl_str = std::string((char *) env->GetStringUTFChars(inUrl, &jCopy));
     std::string outUrl_str = std::string((char *) env->GetStringUTFChars(outUrl, &jCopy));
     std::string filterVideo_str = std::string((char *) env->GetStringUTFChars(filterVideo, &jCopy));
-    std::string filterAudio_str = std::string((char *) env->GetStringUTFChars(filterVideo, &jCopy));
+    std::string filterAudio_str = std::string((char *) env->GetStringUTFChars(filterAudio, &jCopy));
     {
         LOGE("_______________start filter_______________");
         auto *p_filtering = new filtering();

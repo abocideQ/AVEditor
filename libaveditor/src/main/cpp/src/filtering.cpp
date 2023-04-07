@@ -76,7 +76,6 @@ int filtering::go_filter(const string &in_url,
                                     filter_desc_video :
                                     filter_desc_audio;
             model->stream_index = (int) i;
-            model->in_time_base = in_stream->time_base;
             m_av_filter_models[i] = model;
         }
         //out
@@ -164,6 +163,9 @@ int filtering::go_filter(const string &in_url,
     {//open filter
         for (size_t i = 0; i < m_av_filter_models_size; i++) {
             AVFilterModel *model = m_av_filter_models[i];
+            if (model->av_filter_desc.empty()) {
+                continue;
+            }
             if (model->codec_type == AVMEDIA_TYPE_VIDEO) {
                 if (!(model->av_filter_graph = avfilter_graph_alloc())) {
                     line = __LINE__;
@@ -197,6 +199,15 @@ int filtering::go_filter(const string &in_url,
                     line = __LINE__;
                     goto __ERR;
                 }
+                enum AVPixelFormat pix_fmts[] = {AV_PIX_FMT_YUV420P, AV_PIX_FMT_NONE};
+                if ((err = av_opt_set_int_list(model->av_filter_buffer_sink_ctx,
+                                               "pix_fmts",
+                                               pix_fmts,
+                                               AV_PIX_FMT_NONE,
+                                               AV_OPT_SEARCH_CHILDREN)) < 0) {
+                    line = __LINE__;
+                    goto __ERR;
+                }
                 if (!(model->av_filter_in = avfilter_inout_alloc()) ||
                     !(model->av_filter_out = avfilter_inout_alloc())) {
                     line = __LINE__;
@@ -212,8 +223,8 @@ int filtering::go_filter(const string &in_url,
                 model->av_filter_out->next = nullptr;
                 if ((err = avfilter_graph_parse_ptr(model->av_filter_graph,
                                                     model->av_filter_desc.c_str(),
-                                                    &model->av_filter_in,
-                                                    &model->av_filter_out,
+                                                    &model->av_filter_out,//* link out to in
+                                                    &model->av_filter_in,//* link in to out
                                                     nullptr)) < 0) {
                     line = __LINE__;
                     goto __ERR;
@@ -255,12 +266,46 @@ int filtering::go_filter(const string &in_url,
             }
             while (avcodec_receive_frame(model->in_av_decode_ctx, m_frame) >= 0) {
                 AVFrame *dst_frame = av_frame_alloc();
-                if ((err = av_frame_make_writable(dst_frame)) < 0) {
-                    line = __LINE__;
-                    goto __ERR;
+                if (model->av_filter_desc.empty()) {
+                    dst_frame = av_frame_clone(m_frame);
+                    if ((err = av_frame_make_writable(dst_frame)) < 0) {
+                        line = __LINE__;
+                        goto __ERR;
+                    }
+                    if ((err = avcodec_send_frame(model->out_av_decode_ctx,
+                                                  dst_frame)) < 0) {
+                        line = __LINE__;
+                        goto __ERR;
+                    }
+                    AVPacket *dst_packet = av_packet_alloc();
+                    while (avcodec_receive_packet(model->out_av_decode_ctx,
+                                                  dst_packet) >= 0) {
+                        dst_packet->stream_index = model->stream_index;
+                        av_packet_rescale_ts(dst_packet,
+                                             model->out_av_decode_ctx->time_base,
+                                             m_out_avformat_ctx->streams[model->stream_index]->time_base);
+                        if ((err = av_interleaved_write_frame(m_out_avformat_ctx,
+                                                              dst_packet)) < 0) {
+                            line = __LINE__;
+                            goto __ERR;
+                        }
+                        av_packet_unref(dst_packet);
+                    }
+                    av_frame_unref(dst_frame);
+                    av_packet_free(&dst_packet);
                 } else {
-                    if (model->av_filter_desc.empty()) {
-                        av_frame_copy(dst_frame, m_frame);
+                    if (av_buffersrc_add_frame_flags(model->av_filter_buffer_src_ctx,
+                                                     m_frame,
+                                                     AV_BUFFERSRC_FLAG_KEEP_REF) < 0) {
+                        line = __LINE__;
+                        goto __ERR;
+                    }
+                    while (av_buffersink_get_frame(model->av_filter_buffer_sink_ctx,
+                                                   dst_frame) >= 0) {
+                        if ((err = av_frame_make_writable(dst_frame)) < 0) {
+                            line = __LINE__;
+                            goto __ERR;
+                        }
                         if ((err = avcodec_send_frame(model->out_av_decode_ctx,
                                                       dst_frame)) < 0) {
                             line = __LINE__;
@@ -282,47 +327,9 @@ int filtering::go_filter(const string &in_url,
                         }
                         av_frame_unref(dst_frame);
                         av_packet_free(&dst_packet);
-                    } else {
-                        if (av_buffersrc_add_frame_flags(model->av_filter_buffer_src_ctx,
-                                                         m_frame,
-                                                         AV_BUFFERSRC_FLAG_KEEP_REF) < 0) {
-                            line = __LINE__;
-                            goto __ERR;
-                        }
-                        while (av_buffersink_get_frame(model->av_filter_buffer_sink_ctx,
-                                                       dst_frame) >= 0) {
-                            /*if (model->codec_type == AVMEDIA_TYPE_VIDEO) {
-                                dst_frame->pts = model->next_pts;
-                                model->next_pts++;
-                            } else if (model->codec_type == AVMEDIA_TYPE_AUDIO) {
-                                dst_frame->pts = model->next_pts;
-                                model->next_pts += dst_frame->nb_samples;
-                            }*/
-                            if ((err = avcodec_send_frame(model->out_av_decode_ctx,
-                                                          dst_frame)) < 0) {
-                                line = __LINE__;
-                                goto __ERR;
-                            }
-                            AVPacket *dst_packet = av_packet_alloc();
-                            while (avcodec_receive_packet(model->out_av_decode_ctx,
-                                                          dst_packet) >= 0) {
-                                dst_packet->stream_index = model->stream_index;
-                                av_packet_rescale_ts(dst_packet,
-                                                     model->out_av_decode_ctx->time_base,
-                                                     m_out_avformat_ctx->streams[model->stream_index]->time_base);
-                                if ((err = av_interleaved_write_frame(m_out_avformat_ctx,
-                                                                      dst_packet)) < 0) {
-                                    line = __LINE__;
-                                    goto __ERR;
-                                }
-                                av_packet_unref(dst_packet);
-                            }
-                            av_frame_unref(dst_frame);
-                            av_packet_free(&dst_packet);
-                        }
                     }
+                    av_frame_free(&dst_frame);
                 }
-                av_frame_free(&dst_frame);
                 av_frame_unref(m_frame);
             }
             av_packet_unref(m_packet);
