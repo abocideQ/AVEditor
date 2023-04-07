@@ -58,7 +58,14 @@ class MainActivity : AppCompatActivity() {
             val outUrl = File(File(inUrl).parentFile, "movie_filter.mp4").absolutePath
 //            AVEditor().filter(inUrl, outUrl, "scale=iw/2:ih/2", "")
 //            AVEditor().filter(inUrl, outUrl, "crop=iw/2:ih/2:0:0", "")
-            AVEditor().filter(inUrl, outUrl, "=$maskUrl[mask];[in][mask]overlay=0:0[out]", "")
+            AVEditor().filter(
+                inUrl,
+                outUrl,
+                ("movie=$maskUrl[mask];" +
+                        "[mask]scale=iw/10:iw/10[mask_scaled];" +
+                        "[in][mask_scaled]overlay=0:0[out]"),
+                ""
+            )
         }.start()
     }
 }

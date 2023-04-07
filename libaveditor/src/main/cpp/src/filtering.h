@@ -27,17 +27,18 @@ typedef struct av_filter_model {
 class filtering {
 public:
     /**
-     *  filter_desc_video ->
-     *  scale缩放     :   scale=w:h (exp: iw*2:ih*2)
-     *  crop裁剪      :   crop=w:h:x:y
-     *  rotate旋转    :   rotate=angle (exp: 1*PI (1*PI = 1π = 180度))
-     *  overlay叠加   :   marsk.png[marsk];[in][marsk]overlay=x:y
-     *  main_w或W       主输入(背景窗口)宽度
-     *  main_h或H       主输入(背景窗口)高度
-     *  overlay_w或w    overlay输入(前景窗口)宽度
-     *  overlay_h或h    overlay输入(前景窗口)高度
-     *
-     *
+     *  filter_desc_video ->    \n
+     *  scale缩放     :   scale=w:h (exp: iw*2:ih*2)  \n
+     *  crop裁剪      :   crop=w:h:x:y    \n
+     *  rotate旋转    :   rotate=angle (exp: 1*PI (1*PI = 1π = 180度)) \n
+     *  overlay叠加   :   movie=mask.png[mask];[mask]scale=iw/10:iw/10[mask_scaled];[in][mask_scaled]overlay=0:0[out] \n
+     *  drawtext文字  :   drawtext=fontfile=字体.ttf:fontcolor=green:fontsize=30:text=’内容’ \n
+     *  iw或ih          输入视频的高或宽 \n
+     *  main_w或W       背景窗口宽度  \n
+     *  main_h或H       背景窗口高度  \n
+     *  overlay_w或w    前景窗口宽度    \n
+     *  overlay_h或h    前景窗口高度    \n
+     *  \n
      *  filter_desc_audio ->
      *  ???
      */
