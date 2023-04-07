@@ -53,9 +53,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun goFilter() {
         Thread {
+            val maskUrl = AssetUtils.asset2cache(this, "mask.png")
             val inUrl = AssetUtils.asset2cache(this, "movie.mp4")
             val outUrl = File(File(inUrl).parentFile, "movie_filter.mp4").absolutePath
-            AVEditor().filter(inUrl, outUrl, "scale=iw/2:ih/2", "")
+//            AVEditor().filter(inUrl, outUrl, "scale=iw/2:ih/2", "")
+//            AVEditor().filter(inUrl, outUrl, "crop=iw/2:ih/2:0:0", "")
+            AVEditor().filter(inUrl, outUrl, "=$maskUrl[mask];[in][mask]overlay=0:0[out]", "")
         }.start()
     }
 }
