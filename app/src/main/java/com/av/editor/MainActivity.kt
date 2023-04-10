@@ -33,6 +33,10 @@ class MainActivity : AppCompatActivity() {
             text = "filter"
             setOnClickListener { goFilter() }
         })
+        vg.addView(Button(this).apply {
+            text = "merge"
+            setOnClickListener { goMerge() }
+        })
     }
 
     private fun goRepack() {
@@ -66,6 +70,17 @@ class MainActivity : AppCompatActivity() {
                         "[in][mask_scaled]overlay=0:0[out]"),
                 ""
             )
+        }.start()
+    }
+
+    private fun goMerge() {
+        Thread {
+            val inUrls: Array<Any> = arrayOf(
+                AssetUtils.asset2cache(this, "flv.flv"),
+                AssetUtils.asset2cache(this, "play.flv")
+            )
+            val outUrl = File(File(inUrls[0] as String).parentFile, "merge_merge.mp4").absolutePath
+            AVEditor().merge(inUrls, outUrl)
         }.start()
     }
 }

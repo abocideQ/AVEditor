@@ -34,6 +34,7 @@ set(SRC_CPPLUS
         ${CMAKE_SOURCE_DIR}/src/repack.cpp
         ${CMAKE_SOURCE_DIR}/src/recode.cpp
         ${CMAKE_SOURCE_DIR}/src/filtering.cpp
+        ${CMAKE_SOURCE_DIR}/src/merger.cpp
         )
 include_directories(${SRC_HEADER})
 add_library(aveditor SHARED ${SRC_CPPLUS})

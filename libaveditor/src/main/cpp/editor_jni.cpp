@@ -4,6 +4,7 @@
 #include "repack.h"
 #include "recode.h"
 #include "filtering.h"
+#include "merger.h"
 
 void native_ave_repack(JNIEnv *env, jobject *, jstring inUrl, jstring outUrl) {
     jboolean jCopy = false;
@@ -28,7 +29,7 @@ void native_ave_recode(JNIEnv *env, jobject *, jstring inUrl, jstring outUrl) {
         LOGE("_______________end get time line_______________size=%lu", vec_dts.size());
         LOGE("_______________start recode_______________");
         auto *p_recode = new recode();
-        AVConfig config = AVConfig();
+        recode::AVConfig config = recode::AVConfig();
         config.dts_left = vec_dts[(vec_dts.size() / 3)];
         config.dts_right = vec_dts[(vec_dts.size() / 2)];
         int err = p_recode->recode_codec(inUrl_str, outUrl_str, config);
@@ -37,12 +38,11 @@ void native_ave_recode(JNIEnv *env, jobject *, jstring inUrl, jstring outUrl) {
     }
 }
 
-void
-native_ave_filter(JNIEnv *env, jobject *,
-                  jstring inUrl,
-                  jstring outUrl,
-                  jstring filterVideo,
-                  jstring filterAudio) {
+void native_ave_filter(JNIEnv *env, jobject *,
+                       jstring inUrl,
+                       jstring outUrl,
+                       jstring filterVideo,
+                       jstring filterAudio) {
     jboolean jCopy = false;
     std::string inUrl_str = std::string((char *) env->GetStringUTFChars(inUrl, &jCopy));
     std::string outUrl_str = std::string((char *) env->GetStringUTFChars(outUrl, &jCopy));
@@ -54,6 +54,27 @@ native_ave_filter(JNIEnv *env, jobject *,
         int err = p_filtering->go_filter(inUrl_str, outUrl_str, filterVideo_str, filterAudio_str);
         delete p_filtering;
         LOGE("_______________end filter_______________%d", err);
+    }
+}
+
+
+void native_ave_merge(JNIEnv *env, jobject *,
+                      jobjectArray inUrls,
+                      jstring outUrl) {
+    jboolean jCopy = false;
+    std::vector<std::string> inUrl_vec = std::vector<std::string>();
+    for (size_t i = 0; i < env->GetArrayLength(inUrls); i++) {
+        auto jString = (jstring) (env->GetObjectArrayElement(inUrls, (int) i));
+        std::string inUrl_str = std::string((char *) env->GetStringUTFChars(jString, &jCopy));
+        inUrl_vec.push_back(inUrl_str);
+    }
+    std::string outUrl_str = std::string((char *) env->GetStringUTFChars(outUrl, &jCopy));
+    {
+        LOGE("_______________start merge_______________");
+        auto *p_merger = new merger();
+        p_merger->merger_merge(inUrl_vec, outUrl_str);
+        delete p_merger;
+        LOGE("_______________end merge_______________");
     }
 }
 
@@ -81,6 +102,11 @@ JNINativeMethod JNI_METHODS_AVEditor[] = {
                 "native_ave_filter",
                 "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
                 (void *) native_ave_filter
+        },
+        {
+                "native_ave_merge",
+                "([Ljava/lang/Object;Ljava/lang/String;)V",
+                (void *) native_ave_merge
         },
 };
 

@@ -9,22 +9,23 @@
 
 using namespace std;
 
-typedef struct av_filter_model {
-    int stream_index;
-    AVMediaType codec_type;
-    AVCodecContext *in_av_decode_ctx;
-
-    std::string av_filter_desc;
-    AVFilterGraph *av_filter_graph;
-    AVFilterContext *av_filter_buffer_src_ctx;
-    AVFilterContext *av_filter_buffer_sink_ctx;
-    AVFilterInOut *av_filter_in;
-    AVFilterInOut *av_filter_out;
-
-    AVCodecContext *out_av_decode_ctx;
-} AVFilterModel;
-
 class filtering {
+public:
+    typedef struct av_filter_model {
+        int stream_index;
+        AVMediaType codec_type;
+        AVCodecContext *in_av_decode_ctx;
+
+        std::string av_filter_desc;
+        AVFilterGraph *av_filter_graph;
+        AVFilterContext *av_filter_buffer_src_ctx;
+        AVFilterContext *av_filter_buffer_sink_ctx;
+        AVFilterInOut *av_filter_in;
+        AVFilterInOut *av_filter_out;
+
+        AVCodecContext *out_av_decode_ctx;
+    } AVFilterModel;
+
 public:
     /**
      *  filter_desc_video ->    \n

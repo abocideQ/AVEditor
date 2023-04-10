@@ -28,6 +28,10 @@ class AVEditor {
         native_ave_filter(inUrl, outUrl, filterVideo, filterAudio)
     }
 
+    fun merge(inUrls: Array<Any>, outUrl: String) {
+        native_ave_merge(inUrls, outUrl)
+    }
+
     private external fun native_ave_repack(inUrl: String, outUrl: String)
 
     private external fun native_ave_recode(inUrl: String, outUrl: String)
@@ -38,4 +42,6 @@ class AVEditor {
         filterVideo: String,
         filterAudio: String
     )
+
+    private external fun native_ave_merge(inUrls: Array<Any>, outUrl: String)
 }
