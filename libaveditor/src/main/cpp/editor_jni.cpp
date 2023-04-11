@@ -78,6 +78,18 @@ void native_ave_merge(JNIEnv *env, jobject *,
     }
 }
 
+void native_ave_write_time_line(JNIEnv *env, jobject *, jstring inUrl, jstring outFolderUrl) {
+    jboolean jCopy = false;
+    std::string inUrl_str = std::string((char *) env->GetStringUTFChars(inUrl, &jCopy));
+    std::string outFolderUrl_str = std::string(
+            (char *) env->GetStringUTFChars(outFolderUrl, &jCopy));
+    {
+        LOGE("_______________start write time line_______________");
+        timeline::write_time_line_jpg(inUrl_str, outFolderUrl_str, 5);
+        LOGE("_______________end write time line_________________");
+    }
+}
+
 
 /**
  * JNI_OnLoad
@@ -107,6 +119,11 @@ JNINativeMethod JNI_METHODS_AVEditor[] = {
                 "native_ave_merge",
                 "([Ljava/lang/Object;Ljava/lang/String;)V",
                 (void *) native_ave_merge
+        },
+        {
+                "native_ave_write_time_line",
+                "(Ljava/lang/String;Ljava/lang/String;)V",
+                (void *) native_ave_write_time_line
         },
 };
 

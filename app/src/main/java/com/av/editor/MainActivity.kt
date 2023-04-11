@@ -37,6 +37,10 @@ class MainActivity : AppCompatActivity() {
             text = "merge"
             setOnClickListener { goMerge() }
         })
+        vg.addView(Button(this).apply {
+            text = "writeTimeLine"
+            setOnClickListener { goWriteTimeLineJpg() }
+        })
     }
 
     private fun goRepack() {
@@ -83,6 +87,17 @@ class MainActivity : AppCompatActivity() {
             val in_merge_urls: Array<Any> = arrayOf(outUrl1, outUrl2)
             val out_merge_url = File(File(inUrl).parentFile, "merge.mp4").absolutePath
             AVEditor().merge(in_merge_urls, out_merge_url)
+        }.start()
+    }
+
+    private fun goWriteTimeLineJpg() {
+        Thread {
+            val inUrl = AssetUtils.asset2cache(this, "movie.mp4")
+            val folder = File(File(inUrl).parentFile, "TLCache")
+            if (!folder.exists()) {
+                folder.mkdirs()
+            }
+            AVEditor().writeTimeLine(inUrl, folder.absolutePath)
         }.start()
     }
 }

@@ -32,6 +32,10 @@ class AVEditor {
         native_ave_merge(inUrls, outUrl)
     }
 
+    fun writeTimeLine(inUrl: String, outFolderUrl: String) {
+        native_ave_write_time_line(inUrl, outFolderUrl)
+    }
+
     private external fun native_ave_repack(inUrl: String, outUrl: String)
 
     private external fun native_ave_recode(inUrl: String, outUrl: String)
@@ -44,4 +48,6 @@ class AVEditor {
     )
 
     private external fun native_ave_merge(inUrls: Array<Any>, outUrl: String)
+
+    private external fun native_ave_write_time_line(inUrl: String, outFolderUrl: String)
 }

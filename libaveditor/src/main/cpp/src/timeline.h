@@ -12,6 +12,11 @@ using namespace std;
 class timeline {
 public:
     static vector<long double> get_time_stamps(const string &);
+
+    static int write_time_line_jpg(const string &, const string &, int);
+
+private:
+    static int write_jpg(AVFrame *frame, const string &, int);
 };
 
 

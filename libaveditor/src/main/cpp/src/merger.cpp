@@ -298,19 +298,27 @@ int merger::merger_merge(const std::vector<std::string> &in_urls,
         {//free in
             for (size_t j = 0; j < m_stream_models_size; j++) {
                 AVStreamModel *model = m_stream_models[j];
-                avcodec_free_context(&model->in_av_decode_ctx);
+                if (model->in_av_decode_ctx){
+                    avcodec_free_context(&model->in_av_decode_ctx);
+                }
             }
-            avformat_close_input(&m_in_av_fmt_ctx);
-            avformat_free_context(m_in_av_fmt_ctx);
+            if (m_in_av_fmt_ctx){
+                avformat_close_input(&m_in_av_fmt_ctx);
+                avformat_free_context(m_in_av_fmt_ctx);
+            }
         }
 
     }
     {//free out
         for (size_t j = 0; j < m_stream_models_size; j++) {
             AVStreamModel *model = m_stream_models[j];
-            avcodec_free_context(&model->out_av_decode_ctx);
+            if (model->out_av_decode_ctx){
+                avcodec_free_context(&model->out_av_decode_ctx);
+            }
         }
-        avformat_free_context(m_out_av_fmt_ctx);
+        if (m_out_av_fmt_ctx){
+            avformat_free_context(m_out_av_fmt_ctx);
+        }
     }
     return 0;
     __ERR:
