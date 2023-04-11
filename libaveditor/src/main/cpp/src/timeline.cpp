@@ -21,7 +21,6 @@ vector<long double> timeline::get_time_stamps(const string &in_url) {
             continue;
         }
         long double pts = (long double) pkt->pts * av_q2d(stream->time_base);
-        LOGE("timeline, pts=%Lf", pts);
         vec_dts.push_back(pts);
         av_packet_unref(pkt);
     }
