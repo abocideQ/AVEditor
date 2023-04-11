@@ -75,12 +75,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun goMerge() {
         Thread {
-            val inUrls: Array<Any> = arrayOf(
-                AssetUtils.asset2cache(this, "flv.flv"),
-                AssetUtils.asset2cache(this, "play.flv")
-            )
-            val outUrl = File(File(inUrls[0] as String).parentFile, "merge_merge.mp4").absolutePath
-            AVEditor().merge(inUrls, outUrl)
+            val inUrl = AssetUtils.asset2cache(this, "movie.mp4")
+            val outUrl1 = File(File(inUrl).parentFile, "movie_recode1.mp4").absolutePath
+            val outUrl2 = File(File(inUrl).parentFile, "movie_recode2.mp4").absolutePath
+            AVEditor().recode(inUrl, outUrl1)
+            AVEditor().recode(inUrl, outUrl2)
+            val in_merge_urls: Array<Any> = arrayOf(outUrl1, outUrl2)
+            val out_merge_url = File(File(inUrl).parentFile, "merge.mp4").absolutePath
+            AVEditor().merge(in_merge_urls, out_merge_url)
         }.start()
     }
 }

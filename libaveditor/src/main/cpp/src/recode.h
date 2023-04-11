@@ -21,8 +21,8 @@ public:
         int a_sample_rate = 0;
         int a_bit_rate = 0;
         int a_ch_layout = 0;
-        long long dts_left = 0;
-        long long dts_right = 0;
+        long double dts_left = 0;
+        long double dts_right = 0;
     } AVConfig;
 
     typedef struct av_stream_model {

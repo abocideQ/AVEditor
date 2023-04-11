@@ -4,28 +4,13 @@
 
 #include "merger.h"
 
-int merger::merger_merge(const std::vector <std::string> &in_urls,
+int merger::merger_merge(const std::vector<std::string> &in_urls,
                          const std::string &out_url) {
     int line, err = -1;
-    {//open avformat
-        //out
-        m_out_av_fmt_ctx = avformat_alloc_context();
-        if ((err = avformat_alloc_output_context2(&m_out_av_fmt_ctx,
-                                                  nullptr,
-                                                  nullptr,
-                                                  out_url.c_str())) < 0) {
-            line = __LINE__;
-            goto __ERR;
-        }
-        if ((err = avio_open(&m_out_av_fmt_ctx->pb, out_url.c_str(), AVIO_FLAG_WRITE)) < 0) {
-            line = __LINE__;
-            goto __ERR;
-        }
-    }
-    //in
     AVFormatContext *m_in_av_fmt_ctx;
     for (size_t i = 0; i < in_urls.size(); i++) {
-        {//open avcodec & avformat
+        {//open avformat & avcodec
+            //in
             m_in_av_fmt_ctx = avformat_alloc_context();
             if ((err = avformat_open_input(&m_in_av_fmt_ctx,
                                            in_urls[i].c_str(),
@@ -38,12 +23,13 @@ int merger::merger_merge(const std::vector <std::string> &in_urls,
                 line = __LINE__;
                 goto __ERR;
             }
-            for (size_t j = 0; i < m_in_av_fmt_ctx->nb_streams; j++) {
+            for (size_t j = 0; j < m_in_av_fmt_ctx->nb_streams; j++) {
                 if (m_in_av_fmt_ctx->streams[j]->codecpar->codec_type != AVMEDIA_TYPE_VIDEO &&
                     m_in_av_fmt_ctx->streams[j]->codecpar->codec_type != AVMEDIA_TYPE_AUDIO) {
                     continue;
                 }
-                AVStream *in_stream = m_in_av_fmt_ctx->streams[i];
+                AVStream *in_stream = m_in_av_fmt_ctx->streams[j];
+                LOGE("==nbsamples====%d", m_in_av_fmt_ctx->nb_streams);
                 AVCodec *in_decoder = avcodec_find_decoder(in_stream->codecpar->codec_id);
                 if (!in_decoder) {
                     line = __LINE__;
@@ -64,14 +50,31 @@ int merger::merger_merge(const std::vector <std::string> &in_urls,
                     goto __ERR;
                 }
                 in_decoder_ctx->framerate = in_stream->avg_frame_rate;
-                if (i == 0) {//out
-                    if (m_stream_models_size == 0) {
+                //out
+                if (i == 0) {
+                    if (j == 0) {
+                        m_out_av_fmt_ctx = avformat_alloc_context();
+                        if ((err = avformat_alloc_output_context2(&m_out_av_fmt_ctx,
+                                                                  nullptr,
+                                                                  nullptr,
+                                                                  out_url.c_str())) < 0) {
+                            line = __LINE__;
+                            goto __ERR;
+                        }
+                        if ((err = avio_open(&m_out_av_fmt_ctx->pb,
+                                             out_url.c_str(),
+                                             AVIO_FLAG_WRITE)) < 0) {
+                            line = __LINE__;
+                            goto __ERR;
+                        }
                         m_stream_models_size = (int) m_in_av_fmt_ctx->nb_streams;
                         m_stream_models = new AVStreamModel *[m_stream_models_size];
                     }
                     AVCodec *out_encoder = in_decoder_ctx->codec_type == AVMEDIA_TYPE_VIDEO ?
-                                           avcodec_find_encoder(m_out_av_fmt_ctx->video_codec->id) :
-                                           avcodec_find_encoder(m_out_av_fmt_ctx->audio_codec->id);
+                                           avcodec_find_encoder(
+                                                   m_out_av_fmt_ctx->oformat->video_codec) :
+                                           avcodec_find_encoder(
+                                                   m_out_av_fmt_ctx->oformat->audio_codec);
                     if (!out_encoder) {
                         line = __LINE__;
                         goto __ERR;
@@ -100,8 +103,8 @@ int merger::merger_merge(const std::vector <std::string> &in_urls,
                         int sample_rate = in_decoder_ctx->sample_rate;
                         if (out_encoder_ctx->codec->supported_samplerates) {
                             out_encoder_ctx->sample_rate = out_encoder_ctx->codec->supported_samplerates[0];
-                            for (i = 0; out_encoder_ctx->codec->supported_samplerates[i]; i++) {
-                                if (out_encoder_ctx->codec->supported_samplerates[i] ==
+                            for (int k = 0; out_encoder_ctx->codec->supported_samplerates[k]; k++) {
+                                if (out_encoder_ctx->codec->supported_samplerates[k] ==
                                     sample_rate) {
                                     out_encoder_ctx->sample_rate = sample_rate;
                                     break;
@@ -112,8 +115,8 @@ int merger::merger_merge(const std::vector <std::string> &in_urls,
                         out_encoder_ctx->channel_layout = channel_layout;
                         if (out_encoder_ctx->codec->channel_layouts) {
                             out_encoder_ctx->channel_layout = out_encoder_ctx->codec->channel_layouts[0];
-                            for (i = 0; out_encoder_ctx->codec->channel_layouts[i]; i++) {
-                                if (out_encoder_ctx->codec->channel_layouts[i] == channel_layout) {
+                            for (int k = 0; out_encoder_ctx->codec->channel_layouts[k]; k++) {
+                                if (out_encoder_ctx->codec->channel_layouts[k] == channel_layout) {
                                     out_encoder_ctx->channel_layout = channel_layout;
                                     break;
                                 }
@@ -143,14 +146,21 @@ int merger::merger_merge(const std::vector <std::string> &in_urls,
                         line = __LINE__;
                         goto __ERR;
                     }
-                    auto *model = new AVStreamModel();
-                    model->codec_type = in_stream->codecpar->codec_type;
-                    model->stream_index = (int) j;
-                    model->time_base = in_stream->time_base;
-                    model->out_av_decode_ctx = out_encoder_ctx;
-                    m_stream_models[j] = model;
+                    m_stream_models[j] = new AVStreamModel();;
+                    m_stream_models[j]->out_av_decode_ctx = out_encoder_ctx;
                 }
+                m_stream_models[j]->stream_index = (int) j;
+                m_stream_models[j]->codec_type = in_stream->codecpar->codec_type;
+                m_stream_models[j]->time_base = in_stream->time_base;
                 m_stream_models[j]->in_av_decode_ctx = in_decoder_ctx;
+            }
+        }
+        {//write header
+            if (i == 0) {
+                if ((err = avformat_write_header(m_out_av_fmt_ctx, nullptr)) < 0) {
+                    line = __LINE__;
+                    goto __ERR;
+                }
             }
         }
         {//merge
@@ -174,21 +184,75 @@ int merger::merger_merge(const std::vector <std::string> &in_urls,
                     goto __ERR;
                 }
                 while (avcodec_receive_frame(model->in_av_decode_ctx, m_frame) >= 0) {
-                    AVFrame *dst_frame;
-                    dst_frame = av_frame_clone(m_frame);
+                    AVFrame *dst_frame = av_frame_alloc();
+                    if (model->codec_type == AVMEDIA_TYPE_VIDEO) {
+                        dst_frame->format = model->out_av_decode_ctx->pix_fmt;
+                        dst_frame->width = model->out_av_decode_ctx->width;
+                        dst_frame->height = model->out_av_decode_ctx->height;
+                        if (model->in_sws_ctx == nullptr) {
+                            model->in_sws_ctx = sws_getContext(model->in_av_decode_ctx->width,
+                                                               model->in_av_decode_ctx->height,
+                                                               model->in_av_decode_ctx->pix_fmt,
+                                                               dst_frame->width,
+                                                               dst_frame->height,
+                                                               AVPixelFormat(dst_frame->format),
+                                                               SWS_FAST_BILINEAR,
+                                                               nullptr,
+                                                               nullptr,
+                                                               nullptr);
+                        }
+                        dst_frame->pts = model->next_pts;
+                        model->next_pts++;
+                        av_frame_get_buffer(dst_frame, 0);//malloc frame->buffer
+                        sws_scale(model->in_sws_ctx,
+                                  m_frame->data,
+                                  m_frame->linesize,
+                                  0,
+                                  m_frame->height,
+                                  dst_frame->data,
+                                  dst_frame->linesize);
+                    } else if (model->codec_type == AVMEDIA_TYPE_AUDIO) {
+                        dst_frame->format = model->out_av_decode_ctx->sample_fmt;//Cross=L R L R
+                        dst_frame->channel_layout = model->out_av_decode_ctx->channel_layout;//L&R
+                        dst_frame->channels = model->out_av_decode_ctx->channels;
+                        dst_frame->sample_rate = model->out_av_decode_ctx->sample_rate;
+                        if (model->in_swr_ctx == nullptr) {
+                            model->in_swr_ctx = swr_alloc();
+                            swr_alloc_set_opts(model->in_swr_ctx,
+                                               (int64_t) dst_frame->channel_layout,
+                                               AVSampleFormat(dst_frame->format),
+                                               dst_frame->sample_rate,
+                                               (int64_t) model->in_av_decode_ctx->channel_layout,
+                                               model->in_av_decode_ctx->sample_fmt,
+                                               model->in_av_decode_ctx->sample_rate,
+                                               0,
+                                               nullptr);
+                            swr_init(model->in_swr_ctx);
+                        }
+                        //swr_get_delay: (if set sample_rate) get nb_samples last time has not done.
+                        int64_t delay_nb_samples = swr_get_delay(model->in_swr_ctx,
+                                                                 m_frame->sample_rate);
+                        dst_frame->nb_samples = (int) av_rescale_rnd(
+                                m_frame->nb_samples + delay_nb_samples,
+                                dst_frame->sample_rate,
+                                m_frame->sample_rate,
+                                AV_ROUND_UP
+                        );
+                        dst_frame->pts = model->next_pts;
+                        model->next_pts += dst_frame->nb_samples;
+                        av_frame_get_buffer(dst_frame, 0);//malloc frame->buffer
+                        swr_convert(model->in_swr_ctx,
+                                    dst_frame->data,
+                                    dst_frame->nb_samples,
+                                    (const uint8_t **) m_frame->data,
+                                    m_frame->nb_samples);
+                    }
                     if ((err = av_frame_make_writable(dst_frame)) < 0) {
                         line = __LINE__;
                         goto __ERR;
                     }
                     AVPacket *dst_packet = av_packet_alloc();
                     while (avcodec_receive_packet(model->out_av_decode_ctx, dst_packet) >= 0) {
-                        if (model->codec_type == AVMEDIA_TYPE_VIDEO) {
-                            dst_packet->pts = model->next_pts;
-                            model->next_pts++;
-                        } else if (model->codec_type == AVMEDIA_TYPE_AUDIO) {
-                            dst_packet->pts = model->next_pts;
-                            model->next_pts = dst_frame->nb_samples;
-                        }
                         dst_packet->stream_index = model->stream_index;
                         av_packet_rescale_ts(dst_packet, model->out_av_decode_ctx->time_base,
                                              model->time_base);
@@ -208,6 +272,11 @@ int merger::merger_merge(const std::vector <std::string> &in_urls,
             }
             av_packet_free(&m_packet);
             av_frame_free(&m_frame);
+        }
+        {//write footer
+            if (i == in_urls.size() - 1) {
+                av_write_trailer(m_out_av_fmt_ctx);
+            }
         }
         for (size_t j = 0; j < m_stream_models_size; j++) {
             AVStreamModel *model = m_stream_models[j];

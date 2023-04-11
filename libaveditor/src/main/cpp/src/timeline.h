@@ -11,7 +11,7 @@ using namespace std;
 
 class timeline {
 public:
-    static vector<long long> get_time_stamps(const string &);
+    static vector<long double> get_time_stamps(const string &);
 };
 
 

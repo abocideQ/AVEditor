@@ -14,6 +14,8 @@ public:
         AVMediaType codec_type;
         AVRational time_base;
         AVCodecContext *in_av_decode_ctx;
+        SwsContext *in_sws_ctx;
+        SwrContext *in_swr_ctx;
         AVCodecContext *out_av_decode_ctx;
         int64_t next_pts;
     } AVStreamModel;

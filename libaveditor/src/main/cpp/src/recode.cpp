@@ -210,20 +210,19 @@ int recode::recode_codec(const std::string &in_url,
             if (model == nullptr) {
                 continue;
             }
-            if (out_config.dts_left > 0 || out_config.dts_right > 0) {
-                long double time_base = av_q2d(model->in_time_base);
-                long double dts_left = (long double) out_config.dts_left * time_base;
-                long double dts_right = (long double) out_config.dts_right * time_base;
-                long double dts = (long double) m_packet->dts * time_base;
-                if (dts < dts_left || dts > dts_right) {
-                    continue;
-                }
-            }
             if ((err = avcodec_send_packet(model->in_av_decode_ctx, m_packet)) < 0) {
                 line = __LINE__;
                 goto __ERR;
             }
             while (avcodec_receive_frame(model->in_av_decode_ctx, m_frame) >= 0) {
+                if (out_config.dts_left > 0 || out_config.dts_right > 0) {
+                    long double dts_left = out_config.dts_left;
+                    long double dts_right = out_config.dts_right;
+                    long double dts = (long double) m_frame->pts * av_q2d(model->in_time_base);
+                    if (dts < dts_left || dts > dts_right) {
+                        continue;
+                    }
+                }
                 AVFrame *dst_frame = av_frame_alloc();
                 if (model->codec_type == AVMEDIA_TYPE_VIDEO) {
                     /*int align = 1;

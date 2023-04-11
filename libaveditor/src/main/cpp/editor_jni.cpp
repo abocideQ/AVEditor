@@ -25,12 +25,12 @@ void native_ave_recode(JNIEnv *env, jobject *, jstring inUrl, jstring outUrl) {
     std::string outUrl_str = std::string((char *) env->GetStringUTFChars(outUrl, &jCopy));
     {
         LOGE("_______________start get time line_______________");
-        vector<long long> vec_dts = timeline::get_time_stamps(inUrl_str);
+        vector<long double> vec_dts = timeline::get_time_stamps(inUrl_str);
         LOGE("_______________end get time line_______________size=%lu", vec_dts.size());
         LOGE("_______________start recode_______________");
         auto *p_recode = new recode();
         recode::AVConfig config = recode::AVConfig();
-        config.dts_left = vec_dts[(vec_dts.size() / 3)];
+        config.dts_left = vec_dts[(vec_dts.size() / 10)];
         config.dts_right = vec_dts[(vec_dts.size() / 2)];
         int err = p_recode->recode_codec(inUrl_str, outUrl_str, config);
         delete p_recode;
