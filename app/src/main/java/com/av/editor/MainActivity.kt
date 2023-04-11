@@ -3,13 +3,23 @@ package com.av.editor
 import android.annotation.SuppressLint
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
+
+    private val mList = arrayListOf<String>();
+
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,6 +51,25 @@ class MainActivity : AppCompatActivity() {
             text = "writeTimeLine"
             setOnClickListener { goWriteTimeLineJpg() }
         })
+        val mRecyclerView = RecyclerView(this)
+        mRecyclerView.layoutManager = LinearLayoutManager(this)
+        mRecyclerView.adapter = object : RecyclerView.Adapter<ViewHolder>() {
+            @SuppressLint("ResourceType")
+            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+                val imageView = ImageView(parent.context)
+                imageView.id = 1000
+                return object : ViewHolder(ImageView(parent.context)) {}
+            }
+
+            override fun getItemCount(): Int {
+                return mList.size
+            }
+
+            @SuppressLint("ResourceType")
+            override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+                val imageView = holder.itemView.findViewById<ImageView>(1000)
+            }
+        }
     }
 
     private fun goRepack() {
