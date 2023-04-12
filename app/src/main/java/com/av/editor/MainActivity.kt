@@ -1,24 +1,30 @@
 package com.av.editor
 
 import android.annotation.SuppressLint
-import androidx.appcompat.app.AppCompatActivity
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Point
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
+import android.util.Log
+import android.util.LruCache
 import android.view.ViewGroup
-import android.widget.AdapterView
+import android.view.WindowManager
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import androidx.recyclerview.widget.RecyclerView.*
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
-    private val mList = arrayListOf<String>();
+    private val mBitCache: LruCache<Int, Bitmap> = LruCache(1024 * 1024 * 128)
+    private val mList = arrayListOf<String>()
+    private var mAdapter: Adapter<ViewHolder>? = null
 
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,17 +54,29 @@ class MainActivity : AppCompatActivity() {
             setOnClickListener { goMerge() }
         })
         vg.addView(Button(this).apply {
-            text = "writeTimeLine"
-            setOnClickListener { goWriteTimeLineJpg() }
+            text = "TimeLine"
+            setOnClickListener {
+                goWriteTimeLineJpg()
+            }
         })
         val mRecyclerView = RecyclerView(this)
-        mRecyclerView.layoutManager = LinearLayoutManager(this)
-        mRecyclerView.adapter = object : RecyclerView.Adapter<ViewHolder>() {
+        mRecyclerView.layoutManager = LinearLayoutManager(this, HORIZONTAL, false)
+        mAdapter = object : Adapter<ViewHolder>() {
             @SuppressLint("ResourceType")
             override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+                val layout = FrameLayout(parent.context)
+                layout.layoutParams = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
                 val imageView = ImageView(parent.context)
                 imageView.id = 1000
-                return object : ViewHolder(ImageView(parent.context)) {}
+                layout.addView(
+                    imageView,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                return object : ViewHolder(layout) {}
             }
 
             override fun getItemCount(): Int {
@@ -67,9 +85,27 @@ class MainActivity : AppCompatActivity() {
 
             @SuppressLint("ResourceType")
             override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-                val imageView = holder.itemView.findViewById<ImageView>(1000)
+                try {
+                    val imageView = holder.itemView.findViewById<ImageView>(1000)
+                    if (null == mBitCache.get(holder.adapterPosition)) {
+                        BitmapFactory.decodeFile(mList[holder.adapterPosition]).apply {
+                            mBitCache.put(holder.adapterPosition, this)
+                            imageView.setImageBitmap(this)
+                        }
+                    } else {
+                        imageView.setImageBitmap(mBitCache.get(holder.adapterPosition))
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
+        mRecyclerView.adapter = mAdapter
+        vg.addView(
+            mRecyclerView,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
     }
 
     private fun goRepack() {
@@ -119,6 +155,7 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private fun goWriteTimeLineJpg() {
         Thread {
             val inUrl = AssetUtils.asset2cache(this, "movie.mp4")
@@ -127,6 +164,25 @@ class MainActivity : AppCompatActivity() {
                 folder.mkdirs()
             }
             AVEditor().writeTimeLine(inUrl, folder.absolutePath)
+            runOnUiThread {
+                for (file: File in folder.listFiles() ?: arrayOf()) {
+                    mList.add(file.absolutePath)
+                }
+                mAdapter?.notifyDataSetChanged()
+            }
         }.start()
+    }
+
+    private fun getScreenHeight(context: Context): Int {
+        val wm = context.getSystemService(WINDOW_SERVICE) as WindowManager
+            ?: return -1
+        val point = Point()
+        /*......
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            wm.getDefaultDisplay().getRealSize(point);
+        } else {
+            wm.getDefaultDisplay().getSize(point);
+        }*/wm.defaultDisplay.getSize(point)
+        return point.y
     }
 }
