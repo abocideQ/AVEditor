@@ -30,7 +30,7 @@ void native_ave_recode(JNIEnv *env, jobject *, jstring inUrl, jstring outUrl) {
         LOGE("_______________start recode_______________");
         auto *p_recode = new recode();
         recode::AVConfig config = recode::AVConfig();
-        config.dts_left = vec_dts[(vec_dts.size() / 4)];
+        config.dts_left = vec_dts[0];
         config.dts_right = vec_dts[(vec_dts.size() / 2)];
         int err = p_recode->recode_codec(inUrl_str, outUrl_str, config);
         delete p_recode;

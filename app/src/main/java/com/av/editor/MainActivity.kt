@@ -54,7 +54,7 @@ class MainActivity : AppCompatActivity() {
             setOnClickListener { goMerge() }
         })
         vg.addView(Button(this).apply {
-            text = "TimeLine"
+            text = "timeline"
             setOnClickListener {
                 goWriteTimeLineJpg()
             }
@@ -171,18 +171,5 @@ class MainActivity : AppCompatActivity() {
                 mAdapter?.notifyDataSetChanged()
             }
         }.start()
-    }
-
-    private fun getScreenHeight(context: Context): Int {
-        val wm = context.getSystemService(WINDOW_SERVICE) as WindowManager
-            ?: return -1
-        val point = Point()
-        /*......
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            wm.getDefaultDisplay().getRealSize(point);
-        } else {
-            wm.getDefaultDisplay().getSize(point);
-        }*/wm.defaultDisplay.getSize(point)
-        return point.y
     }
 }
