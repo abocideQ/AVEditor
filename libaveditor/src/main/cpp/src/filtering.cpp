@@ -94,7 +94,7 @@ int filtering::go_filter(const string &in_url,
                 line = __LINE__;
                 goto __ERR;
             }
-            LOGE("lib_x264 / fdk_aac, not build for current ffmpeg.so");
+//            LOGE("lib_x264 / fdk_aac, not build for current ffmpeg.so");
             LOGE("mpeg_encoder: %s", avcodec_get_name(out_av_encoder->id));
             if (model->codec_type == AVMEDIA_TYPE_VIDEO) {
                 out_av_encoder_ctx->codec_type = AVMEDIA_TYPE_VIDEO;

@@ -83,7 +83,8 @@ int recode::recode_codec(const std::string &in_url,
                      m_out_avformat_ctx->oformat->video_codec :
                      out_config.AVVideoCodecID) :
                     (out_config.AVAudioCodecID == AV_CODEC_ID_NONE ?
-                     m_out_avformat_ctx->oformat->audio_codec :
+                     /*m_out_avformat_ctx->oformat->audio_codec :*/
+                     AV_CODEC_ID_AAC :
                      out_config.AVAudioCodecID));
             if (out_av_encoder == nullptr) {
                 line = __LINE__;
@@ -94,7 +95,7 @@ int recode::recode_codec(const std::string &in_url,
                 line = __LINE__;
                 goto __ERR;
             }
-            LOGE("lib_x264 / fdk_aac, not build for current ffmpeg.so");
+//            LOGE("lib_x264 / fdk_aac, not build for current ffmpeg.so");
             LOGE("mpeg_encoder: %s", avcodec_get_name(out_av_encoder->id));
             if (model->codec_type == AVMEDIA_TYPE_VIDEO) {
                 out_av_encoder_ctx->codec_type = AVMEDIA_TYPE_VIDEO;
