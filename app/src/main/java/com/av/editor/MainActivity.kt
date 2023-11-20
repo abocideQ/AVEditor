@@ -110,16 +110,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun goRepack() {
         Thread {
-            val inUrl = AssetUtils.asset2cache(this, "movie.mp4")
-            val outUrl = File(File(inUrl).parentFile, "movie_repack.flv").absolutePath
+            val inUrl = AssetUtils.asset2cache(this, "h265_3.mkv")
+            val outUrl = File(File(inUrl).parentFile, "h265_3_repack.ts").absolutePath
             AVEditor().repack(inUrl, outUrl)
         }.start()
     }
 
     private fun goRecode() {
         Thread {
-            val inUrl = AssetUtils.asset2cache(this, "movie.mp4")
-            val outUrl = File(File(inUrl).parentFile, "movie_recode.mp4").absolutePath
+            val inUrl = AssetUtils.asset2cache(this, "h265_2.mp4")
+            val outUrl = File(File(inUrl).parentFile, "h265_2_recode.mp4").absolutePath
             AVEditor().recode(inUrl, outUrl)
         }.start()
     }
